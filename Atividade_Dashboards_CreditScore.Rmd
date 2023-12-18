@@ -1,0 +1,349 @@
+---
+title: "Dashboard Credit Score"
+author: "Nelson Geraldo A. de Carvalho"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: flatly
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(ggplot2)
+library(bslib)
+library(bsicons)
+library(RColorBrewer)
+```
+
+
+```{r}
+db <- read.csv('./Credit_Score_Clean.csv')
+```
+
+
+Variáveis Quantitativas
+=======================================================================
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+```{r}
+# shiny inputs defined here
+variaveis_numericas <- names(db)[sapply(db, is.numeric)]
+
+selectInput(
+  inputId = "selectedVariable",
+  label = "Selecione a variável numérica para fazer o teste do Qui-Quadrado com a variável 'tipocarteira'",
+  choices = variaveis_numericas
+)
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Box P-valor
+
+```{r}
+renderValueBox({
+  valor_p <- NULL
+  X <- input$selectedVariable  
+  
+  qui_quadrado <- function(data, variavel_numerica) {
+    df <- data[, c("tipocarteira", variavel_numerica)]
+    
+    # Remover linhas com NA na variável escolhida
+    df <- df[complete.cases(df), ]
+    
+    # Remover idades menores que 18
+    df <- df[df[[variavel_numerica]] >= 18, ]
+    
+    # Tabela de Contingencia
+    tabela_contingencia <- table(df$tipocarteira, cut(df[[variavel_numerica]], 5))  
+    
+    # Teste do Qui-quadrado
+    chi_square_test <- chisq.test(tabela_contingencia)
+    
+    # Retornar o p-valor
+    return(chi_square_test$p.value)
+  }
+  
+  p_valor <- qui_quadrado(db, X)
+  valueBox(p_valor, caption = "P-Valor", icon="fa-solid fa-chart-column", color="#facc15")
+
+})
+```
+
+### Distribuição de Frequência
+
+
+```{r}
+renderPlot({
+  selectedVariable <- input$selectedVariable
+  X <- input$selectedVariable  
+  
+  if (selectedVariable == "idadecliente") {
+    X <- db[, "idadecliente"]
+  } else if (input$selectedVariable == "totaldependentes") {
+    X <- db[, "totaldependentes"]
+  } else if (input$selectedVariable == "nrfilhos") {
+    X <- db[, "nrfilhos"]
+  } else if (input$selectedVariable == "totalempregado") {
+    X <- db[, "totalempregado"]
+  } else if (input$selectedVariable == "liberado") {
+    X <- db[, "liberado"]
+  } else if (input$selectedVariable == "total") {
+    X <- db[, "total"]
+  } else if (input$selectedVariable == "finciado") {
+    X <- db[, "finciado"]
+  } else if (input$selectedVariable == "nrparcelas") {
+    X <- db[, "nrparcelas"]
+  } else if (input$selectedVariable == "parcelanr") {
+    X <- db[, "parcelanr"]
+  } else if (input$selectedVariable == "diasatraso") {
+    X <- db[, "diasatraso"]
+  } else if (input$selectedVariable == "principal") {
+    X <- db[, "principal"]
+  } else if (input$selectedVariable == "principal_pagamento") {
+    X <- db[, "principal_pagamento"]
+  } else if (input$selectedVariable == "principal_salo") {
+    X <- db[, "principal_salo"]
+  } else if (input$selectedVariable == "juros") {
+    X <- db[, "juros"]
+  } else if (input$selectedVariable == "juros_pagamento") {
+    X <- db[, "juros_pagamento"]
+  } else if (input$selectedVariable == "juros_salo") {
+    X <- db[, "juros_salo"]
+  } else if (input$selectedVariable == "parcela") {
+    X <- db[, "parcela"]
+  } else if (input$selectedVariable == "parcela_pagamento") {
+    X <- db[, "parcela_pagamento"]
+  } else if (input$selectedVariable == "parcela_salo") {
+    X <- db[, "parcela_salo"]
+  } else if (input$selectedVariable == "taxamensal") {
+    X <- db[, "taxamensal"]
+  } else if (input$selectedVariable == "faturamentoanual") {
+    X <- db[, "faturamentoanual"]
+  } else {
+    X <- NULL
+    print("Variável não encontrada")
+  }
+  
+  hist(
+    X,
+    main = paste('Histograma de "', selectedVariable, '"'),
+    xlab = selectedVariable,
+    ylab = "Frequência",
+    col = rgb(0.2, 0.8, 0.5, 0.5),
+    border = FALSE
+  )
+})
+
+```
+
+### Visualização de Dados
+
+```{r}
+renderPlot({
+  selectedVariable <- input$selectedVariable
+
+  ggplot(db, aes(x= db$tipocarteira, y=db[, selectedVariable])) +
+  geom_segment( aes(x=db$tipocarteira, xend=db$tipocarteira, y=0, yend=db[, selectedVariable]), color="grey") +
+  geom_point( color="orange", size=4) +
+  theme_light() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  xlab("") +
+  ylab(selectedVariable)
+})
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Boxplot
+
+```{r}
+renderPlot({
+  selectedVariable <- input$selectedVariable
+  
+  X <- input$selectedVariable  
+  
+  if (selectedVariable == "idadecliente") {
+    X <- db[, "idadecliente"]
+  } else if (input$selectedVariable == "totaldependentes") {
+    X <- db[, "totaldependentes"]
+  } else if (input$selectedVariable == "nrfilhos") {
+    X <- db[, "nrfilhos"]
+  } else if (input$selectedVariable == "totalempregado") {
+    X <- db[, "totalempregado"]
+  } else if (input$selectedVariable == "liberado") {
+    X <- db[, "liberado"]
+  } else if (input$selectedVariable == "total") {
+    X <- db[, "total"]
+  } else if (input$selectedVariable == "finciado") {
+    X <- db[, "finciado"]
+  } else if (input$selectedVariable == "nrparcelas") {
+    X <- db[, "nrparcelas"]
+  } else if (input$selectedVariable == "parcelanr") {
+    X <- db[, "parcelanr"]
+  } else if (input$selectedVariable == "diasatraso") {
+    X <- db[, "diasatraso"]
+  } else if (input$selectedVariable == "principal") {
+    X <- db[, "principal"]
+  } else if (input$selectedVariable == "principal_pagamento") {
+    X <- db[, "principal_pagamento"]
+  } else if (input$selectedVariable == "principal_salo") {
+    X <- db[, "principal_salo"]
+  } else if (input$selectedVariable == "juros") {
+    X <- db[, "juros"]
+  } else if (input$selectedVariable == "juros_pagamento") {
+    X <- db[, "juros_pagamento"]
+  } else if (input$selectedVariable == "juros_salo") {
+    X <- db[, "juros_salo"]
+  } else if (input$selectedVariable == "parcela") {
+    X <- db[, "parcela"]
+  } else if (input$selectedVariable == "parcela_pagamento") {
+    X <- db[, "parcela_pagamento"]
+  } else if (input$selectedVariable == "parcela_salo") {
+    X <- db[, "parcela_salo"]
+  } else if (input$selectedVariable == "taxamensal") {
+    X <- db[, "taxamensal"]
+  } else if (input$selectedVariable == "faturamentoanual") {
+    X <- db[, "faturamentoanual"]
+  } else {
+    X <- NULL
+    print("Variável não encontrada")
+  }
+  
+  boxplot(
+    X ~ db$tipocarteira,
+    data = db,
+    col = "lightblue",
+    main = paste("Boxplot de", selectedVariable, "por Tipo de Carteira"),
+    xlab = "Tipo de Carteira",
+    ylab = selectedVariable
+  )
+})
+
+```
+
+
+Variáveis Qualitativas
+=======================================================================
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+```{r}
+# Limpando valores que nao precisam estar no input
+ocultar_colunas <- c("cliente", "credito", "cepresidencia", "cepnegocio")
+db <- db[, !(names(db) %in% ocultar_colunas)]
+
+variaveis_qualitativas <- names(db)[sapply(db, is.character)]
+
+selectInput(
+  inputId = "qualitativeVariable",
+  label = "Selecione a variável qualitativa para fazer o teste do Qui-Quadrado com a variável 'tipocarteira'",
+  choices = variaveis_qualitativas
+)
+```
+
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Box P-Valor de Variável Quantitativa
+
+```{r}
+renderValueBox({
+  valor_p <- NULL
+  X <- input$qualitativeVariable  
+  
+  qui_quadrado <- function(data, variavel_qualitativa) {
+    # Selecionar as colunas relevantes
+    df <- data[, c("tipocarteira", variavel_qualitativa)]
+    
+    # Removendo NAs
+    df <- df[complete.cases(df), ]
+    
+    # Tabela de Contingencia
+    tabela_contingencia <- table(df$tipocarteira, df[, variavel_qualitativa])
+    tabela_contingencia
+    
+    # Teste do Qui-quadrado
+    chi_square_test <- chisq.test(tabela_contingencia)
+    
+    # Retornar o valor-p
+    return(chi_square_test$p.value)
+  }
+  
+  p_valor <- qui_quadrado(db, X)
+  valueBox(p_valor, caption = "P-Valor", icon="fa-solid fa-chart-column", color="#facc15")
+})
+
+```
+
+### Gráfico de Barras
+
+```{r}
+renderPlot({
+  selectedVariable <- input$qualitativeVariable
+  
+  db$estadocivil <- as.factor(db$estadocivil)
+
+  tabela_de_contingencia <- table(db$tipocarteira, db[, selectedVariable])
+  
+  # Quantidade de Cores para a paleta de cores
+  num_cores <- length(unique(db[,selectedVariable])) - 1
+  
+  barplot(
+    t(tabela_de_contingencia),
+    beside = TRUE,
+    legend = TRUE,
+    border = FALSE,
+    col = brewer.pal(num_cores, "Paired"),
+    main = paste("Gráfico de Barras: Tipo de Carteira por", selectedVariable)
+  )
+})
+```
+
+### Visualização
+
+```{r}
+renderPlot({
+  selectedVariable <- input$qualitativeVariable
+  
+  db$estadocivil <- as.factor(db$estadocivil)
+
+  tabela_de_contingencia <- table(db$tipocarteira, db[, selectedVariable])
+  
+  barplot(
+    (tabela_de_contingencia),
+    beside = TRUE,
+    legend = TRUE,
+    col = brewer.pal(2, "Dark2"),
+    border = FALSE,
+    main = paste("Gráfico de Barras:", selectedVariable, "por Tipo de Carteira")
+  )
+  
+})
+
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Desenvolvimento
+
+```{r}
+renderText({
+  'Desenvolvido com Shiny e RMarkdown, por Nelson Carvalho'
+})
+```
